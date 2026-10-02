@@ -2,6 +2,8 @@
 
 Read only the section relevant to the current host. These mappings implement the same status rules; they do not create additional access. Other hosts can implement the generic contract below.
 
+Every adapter receives the complete desired title, including the optional 🖥️ or 📱 activity after the status. Preserve the original subject and record ownership of a managed activity prefix in trusted session context only after a successful rename. The same mapping works for starting, switching, and clearing testing activity.
+
 ## Generic host or orchestrator
 
 An automatic adapter needs:

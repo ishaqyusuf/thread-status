@@ -4,6 +4,8 @@
 
 ⏳ Working · ⌛ Waiting · ⚠️ Needs attention · 💤 Saved for later · ✅ Completed
 
+Optional testing activity: **🖥️ UI/browser testing · 📱 Mobile testing**
+
 An **agent-agnostic, host-agnostic skill** with shared status rules and adapters for title updates. Use it with any agent or orchestrator that can load the instructions. The same five statuses apply across models, local apps, and cloud sessions.
 
 ## Why this skill exists
@@ -14,11 +16,11 @@ One chat is waiting for a build. Another needs your answer. A third is an idea y
 
 An idle chat can mean any of those things. Ending a turn does not mean the task is finished.
 
-Thread Status puts that distinction into the title so you can scan your work and find what needs attention.
+Thread Status puts that distinction into the title so you can scan your work and find what needs attention. During UI testing, a second emoji also tells you whether the agent is checking general UI/browser flows or mobile behavior.
 
 ## The user story
 
-> As someone managing conversations across different agents, I want each title to show the state of its work, so I can find the chats that need me, return to ideas I saved, and recognize completed tasks without reopening every conversation.
+> As someone managing conversations across different agents, I want each title to show the state of its work and its current testing activity, so I can find the chats that need me, distinguish UI/browser checks from mobile checks, return to ideas I saved, and recognize completed tasks without reopening every conversation.
 
 ### Before
 
@@ -32,7 +34,7 @@ Review landing page
 ### After
 
 ```text
-⏳ Fix payment scrolling
+⏳ 🖥️ Fix payment scrolling
 ⚠️ Prepare mobile release
 💤 Explore product sharing
 ✅ Review landing page
@@ -52,6 +54,29 @@ These are examples of title formatting. They do not represent a live status dash
 
 The distinction between **⌛** and **💤** is intentional: waiting for something is different from deciding to return later.
 
+## Optional testing activity
+
+The status always comes first. A second managed emoji appears only during the actual testing phase:
+
+| Emoji | Activity | Example |
+|---|---|---|
+| 🖥️ | General UI, browser, and user-flow testing | `⏳ 🖥️ Test checkout flow` |
+| 📱 | Testing on a phone, mobile emulator/simulator, or mobile browser viewport | `⏳ 📱 Test checkout flow` |
+
+Mobile testing uses 📱 even when driven from a desktop browser. The skill replaces the activity when switching modes; it never adds both. Merely working on UI/mobile code, writing tests, or running unit tests does not activate either marker.
+
+The activity disappears when testing ends, work moves to another phase, testing is blocked, or the task is saved for later or completed. A still-running external test can retain its activity with ⌛. Finishing tests does not earn ✅ if other requested work remains.
+
+```text
+⏳ Test checkout flow
+⏳ 🖥️ Test checkout flow
+⏳ 📱 Test checkout flow
+⏳ Test checkout flow
+✅ Test checkout flow
+```
+
+The skill preserves unrelated subject emojis and tracks which activity prefix it actually added. If ownership is uncertain after an interruption, it preserves the ambiguous emoji rather than deleting part of your title.
+
 ## Install
 
 Install globally with the [skills CLI](https://github.com/vercel-labs/skills), then choose the agents you use:
@@ -70,7 +95,7 @@ The skill selects a mode from the capabilities actually available:
 
 | Mode | Available capability | Behavior |
 |---|---|---|
-| Automatic | Reliable current identity, full-title read, and rename operation | Updates the conversation title at meaningful transitions. |
+| Automatic | Reliable current identity, full-title read, and rename operation | Updates the status and optional testing activity at meaningful transitions. |
 | Manual | A documented user rename command and a known full title | Suggests the new title and the manual command. |
 | Status-only | No supported title integration or no reliable title | Shows the current status without claiming a sidebar update. |
 
@@ -101,6 +126,9 @@ Hosts may also expose their own invocation syntax, such as `/thread-status` in C
 | A required answer or action is missing | ⚠️ |
 | Only an external process is pending | ⌛ |
 | The full requested work is complete | ✅ |
+| General UI/browser testing starts | Status followed by 🖥️ |
+| Mobile device or viewport testing starts | Status followed by 📱 |
+| Testing ends or is set aside | Activity marker is removed |
 
 “Keep this for later” records a status; it does not create a reminder. Ask separately if you want a scheduled follow-up.
 
@@ -115,6 +143,11 @@ Use the thread-status skill when substantive work starts, at status
 changes, and before ending a turn. Read its SKILL.md and follow the
 relevant host adapter. Preserve the title with exactly one status prefix:
 ⏳ working, ⌛ waiting, ⚠️ needs attention, 💤 saved for later, ✅ completed.
+While actually testing, add one activity after the status: 🖥️ for general
+UI/browser testing or 📱 for mobile device, emulator, or viewport testing.
+Use 📱 instead of 🖥️ for mobile checks. Clear the managed activity when
+testing ends, is blocked, or the task is saved for later or completed.
+Preserve unrelated emojis already in the title.
 "Keep this for later" means 💤. "Resume this" or "refresh this" means ⏳
 while revisiting the work. Do not infer completion from an idle session
 or the end of a turn. Update only the current conversation unless I
@@ -136,9 +169,9 @@ Preserve your other instructions. Start a new conversation or session to verify 
 
 ## How it behaves
 
-- **One prefix:** a status change replaces the previous status emoji rather than stacking another one.
+- **Status plus optional activity:** one status emoji, then at most one managed testing emoji. A transition replaces the previous managed prefix.
 - **Preserved titles:** the subject and unrelated emojis remain intact, including manual title edits.
-- **Meaningful updates:** no repeated rename when the status is unchanged.
+- **Meaningful updates:** rename when status or testing activity changes, with no repeated write when the title is already correct.
 - **Scope-aware completion:** a requested plan can be complete when delivered; a requested implementation still needs implementation and verification.
 - **Reopened work:** new substantive work changes a completed chat back to ⏳. An acknowledgment alone does not reopen it.
 - **Current chat only:** bulk updates or changes to other chats require an explicit request.
