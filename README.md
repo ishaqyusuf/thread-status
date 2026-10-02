@@ -1,10 +1,10 @@
 # Thread Status
 
-**Know which Codex chats are working, waiting, blocked, saved for later, or finished—at a glance.**
+**Know which agent conversations are working, waiting, blocked, saved for later, or finished—at a glance.**
 
 ⏳ Working · ⌛ Waiting · ⚠️ Needs attention · 💤 Saved for later · ✅ Completed
 
-A small agent skill that keeps one status emoji at the beginning of each chat title. The subject stays the same as the work moves forward.
+An **agent-agnostic, host-agnostic skill** with shared status rules and adapters for title updates. Use it with any agent or orchestrator that can load the instructions. The same five statuses apply across models, local apps, and cloud sessions.
 
 ## Why this skill exists
 
@@ -18,7 +18,7 @@ Thread Status puts that distinction into the title so you can scan your work and
 
 ## The user story
 
-> As someone managing several Codex chats, I want each title to show the state of its work, so I can find the chats that need me, return to ideas I saved, and recognize completed tasks without reopening every conversation.
+> As someone managing conversations across different agents, I want each title to show the state of its work, so I can find the chats that need me, return to ideas I saved, and recognize completed tasks without reopening every conversation.
 
 ### Before
 
@@ -44,9 +44,9 @@ These are examples of title formatting. They do not represent a live status dash
 
 | Emoji | Status | What it tells you |
 |---|---|---|
-| ⏳ | Working | Codex is researching, implementing, reviewing, testing, or refreshing the work. |
+| ⏳ | Working | The agent is researching, implementing, reviewing, testing, or refreshing the work. |
 | ⌛ | Waiting | Work is queued or waiting for something external, such as a build result. |
-| ⚠️ | Needs attention | Codex needs your answer, approval, access, or help with a blocker. |
+| ⚠️ | Needs attention | The agent needs your answer, approval, access, or help with a blocker. |
 | 💤 | Saved for later | You deliberately put unfinished work aside to revisit. |
 | ✅ | Completed | The full requested task is finished, including necessary verification. |
 
@@ -54,60 +54,85 @@ The distinction between **⌛** and **💤** is intentional: waiting for somethi
 
 ## Install
 
-This skill targets **Codex desktop chats that expose tools for reading and renaming chat titles**. Installation alone does not provide those tools. A CLI or another agent host without them cannot perform the title updates.
-
-Install the skill for your Codex user with the [skills CLI](https://github.com/vercel-labs/skills):
+Install globally with the [skills CLI](https://github.com/vercel-labs/skills), then choose the agents you use:
 
 ```sh
-npx skills@latest add ishaqyusuf/thread-status --skill thread-status --agent codex --global
+npx skills@latest add ishaqyusuf/thread-status --skill thread-status --global
 ```
 
-Follow the installer prompts. If you already have a local copy named `thread-status`, keep one active installation to avoid duplicate versions.
+The installer supports hosts including Claude Code, Codex, Cursor, and OpenCode. Select your hosts in its prompts; installation does not grant title-editing access. Keep one active version per host if you already have a local copy.
+
+For a cloud orchestrator or another environment, install or upload the `skills/thread-status` folder through that host's supported skill mechanism. A global local installation applies across projects for your selected local agents; it does not install into remote or cloud workspaces.
+
+## Host capabilities
+
+The skill selects a mode from the capabilities actually available:
+
+| Mode | Available capability | Behavior |
+|---|---|---|
+| Automatic | Reliable current identity, full-title read, and rename operation | Updates the conversation title at meaningful transitions. |
+| Manual | A documented user rename command and a known full title | Suggests the new title and the manual command. |
+| Status-only | No supported title integration or no reliable title | Shows the current status without claiming a sidebar update. |
+
+| Host | Integration route | Verification |
+|---|---|---|
+| Codex desktop | Exposed chat-read and title-rename tools | Automatic renames exercised. |
+| Claude Code | Runtime integration when available; otherwise its documented `/rename` command for manual use | Documentation-backed; automatic renaming not tested. |
+| OpenCode | Existing authorized session API connection with the current session ID | Documentation-backed; live renaming not tested. |
+| Other local or cloud hosts | Existing tools, API, CLI, or an orchestrator adapter implementing the same capabilities | Depends on the supplied integration. |
+
+Read the [host adapters](skills/thread-status/references/host-adapters.md) for the operation mappings and sources. The portable rules do not require a particular model provider.
 
 ## Use it in one chat
 
-Mention the skill in your prompt:
+Ask your agent to load the skill:
 
 ```text
-Use $thread-status while you work on this task.
+Use the thread-status skill while you work on this task.
 ```
 
-Once the skill is active, ordinary instructions drive the transitions:
+Hosts may also expose their own invocation syntax, such as `/thread-status` in Claude Code or `$thread-status` in Codex. Once the skill is active, ordinary instructions drive the transitions:
 
 | What you say or what happens | Result |
 |---|---|
 | “Keep this for later.” | 💤 |
 | “Resume this.” | ⏳ |
-| “Refresh this and check what has changed.” | ⏳ while Codex revisits the work |
+| “Refresh this and check what has changed.” | ⏳ while the agent revisits the work |
 | A required answer or action is missing | ⚠️ |
 | Only an external process is pending | ⌛ |
 | The full requested work is complete | ✅ |
 
 “Keep this for later” records a status; it does not create a reminder. Ask separately if you want a scheduled follow-up.
 
-## Use it across your chats
+## Use it across your conversations
 
-For a consistent default, append this instruction to your effective global Codex instructions, usually `~/.codex/AGENTS.md`:
+For a consistent default, append this portable instruction to your host's effective global instructions:
 
 ```markdown
-## Chat title status
+## Conversation status
 
-Use the thread-status skill in every supported Codex desktop chat.
-Read its SKILL.md when substantive work starts, then follow it at status
-changes and before ending a turn. Keep exactly one leading status emoji
-and preserve the existing title text:
+Use the thread-status skill when substantive work starts, at status
+changes, and before ending a turn. Read its SKILL.md and follow the
+relevant host adapter. Preserve the title with exactly one status prefix:
 ⏳ working, ⌛ waiting, ⚠️ needs attention, 💤 saved for later, ✅ completed.
 "Keep this for later" means 💤. "Resume this" or "refresh this" means ⏳
-while revisiting the work. Do not infer completion from an idle chat or
-the end of a turn. Update only the current chat unless I request others.
-This authorizes these title-prefix updates without repeated confirmation.
-If title tools are unavailable, continue the main task and report that
-limitation briefly.
+while revisiting the work. Do not infer completion from an idle session
+or the end of a turn. Update only the current conversation unless I
+request others. This authorizes the title-prefix updates within the
+host's normal permissions. If automatic renaming is unavailable, use
+manual or status-only mode and do not claim the title changed.
 ```
 
-Preserve your existing instructions. If a nonempty `AGENTS.override.md` takes precedence, add the rule there instead. Start a new chat or session to check that the instruction and skill are loaded. [Codex instruction discovery](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
+Typical global instruction locations:
 
-Existing chats receive updates when the skill runs in them. This setup does not bulk-label your history or continuously watch stopped chats.
+| Host | Location | Reference |
+|---|---|---|
+| Codex | `~/.codex/AGENTS.md`, or the effective override | [Instruction discovery](https://learn.chatgpt.com/docs/agent-configuration/agents-md) |
+| Claude Code | `~/.claude/CLAUDE.md` | [User instructions](https://code.claude.com/docs/en/memory) |
+| OpenCode | `~/.config/opencode/AGENTS.md` | [Global rules](https://opencode.ai/docs/rules/) |
+| Other hosts or cloud orchestrators | Their supported persistent instruction setting | Check the host's documentation. |
+
+Preserve your other instructions. Start a new conversation or session to verify that the skill and global rule load. Existing conversations update when the skill runs in them; this setup does not bulk-label history or continuously watch stopped agents.
 
 ## How it behaves
 
@@ -118,7 +143,7 @@ Existing chats receive updates when the skill runs in them. This setup does not 
 - **Reopened work:** new substantive work changes a completed chat back to ⏳. An acknowledgment alone does not reopen it.
 - **Current chat only:** bulk updates or changes to other chats require an explicit request.
 
-The skill uses the host's existing title tools. It contains no background service or polling script. It cannot update a title during a crash or forced interruption; it reconciles the status when work resumes. If a reliable title or rename tool is unavailable, it skips the rename and continues the task.
+The skill uses the host's existing title capabilities and supports manual/status-only fallback. It contains no background service or polling script. It cannot update a title during a crash or forced interruption; it reconciles the status when work resumes. A missing title integration does not block the main task; the agent reports the status without claiming a rename.
 
 Read the complete behavior in [SKILL.md](skills/thread-status/SKILL.md).
 
@@ -127,11 +152,14 @@ Read the complete behavior in [SKILL.md](skills/thread-status/SKILL.md).
 ```text
 skills/thread-status/
 ├── SKILL.md
+├── references/host-adapters.md
 └── agents/openai.yaml
 ```
 
+The `SKILL.md` and host adapters define the portable workflow. `agents/openai.yaml` is optional display metadata for hosts that use it; other hosts can ignore it.
+
 ## Inspiration and license
 
-The README's problem-first presentation was inspired by [Matt Pocock's skills repository](https://github.com/mattpocock/skills). Thread Status is an independent skill for organizing Codex chats.
+The README's problem-first presentation was inspired by [Matt Pocock's skills repository](https://github.com/mattpocock/skills). Thread Status is an independent skill for organizing agent conversations across hosts.
 
 [MIT](LICENSE) © 2026 Yusuf Ishaq.
