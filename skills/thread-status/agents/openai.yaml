@@ -1,0 +1,3 @@
+interface:
+  display_name: "Thread Status"
+  short_description: "Keep chat titles aligned with five status emojis"
