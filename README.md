@@ -6,7 +6,9 @@
 
 Optional testing activity: **🖥️ UI/browser testing · 📱 Mobile testing**
 
-An **agent-agnostic, host-agnostic skill** with shared status rules and adapters for title updates. Use it with any agent or orchestrator that can load the instructions. The same eight statuses apply across models, local apps, and cloud sessions.
+An **agent-agnostic, host-agnostic skill** with shared status rules and adapters for emoji prefix updates. Use it with any agent or orchestrator that can load the instructions. The same eight statuses apply across models, local apps, and cloud sessions.
+
+**Only the emoji prefix changes.** The skill never rewrites, shortens, corrects, or generates the title text. It preserves wording, capitalization, punctuation, spacing, and unrelated subject emojis exactly. If the host requires a full-title setter, the skill submits the unchanged title text with only the managed prefix changed. If it cannot safely preserve the title, it reports status in chat.
 
 ## Why this skill exists
 
@@ -16,7 +18,7 @@ One chat is waiting for a build. Another needs your answer. A third is an idea y
 
 An idle chat can mean any of those things. Ending a turn does not mean the task is finished.
 
-Thread Status puts that distinction into the title so you can scan your work and find what needs attention. During UI testing, a second emoji also tells you whether the agent is checking general UI/browser flows or mobile behavior.
+Thread Status adds that distinction as an emoji prefix before the existing title so you can scan your work and find what needs attention. During UI testing, a second emoji also tells you whether the agent is checking general UI/browser flows or mobile behavior.
 
 ## The user story
 
@@ -40,7 +42,7 @@ Review landing page
 ✅ Review landing page
 ```
 
-These are examples of title formatting. They do not represent a live status dashboard.
+These are examples of emoji prefix formatting; the title text stays exactly the same. They do not represent a live status dashboard.
 
 ## The eight statuses
 
@@ -59,7 +61,7 @@ Use 💬 for "let's think about this idea" and ⏳ for "write an implementation 
 
 Keep ⏳ while useful independent work remains. Once progress stops, use ⌛ for a process expected to finish, ⚠️ when you must act, or 🛑 for an external blocker. Use ⏸️ only with reliable evidence of interruption; an idle chat or stale working title is insufficient. 💤 means you deliberately set the work aside.
 
-Resumption preserves the unfinished objective and rechecks what completed and what still blocks progress. A blocked native goal remains unfinished; these title labels do not change the goal's underlying status.
+Resumption preserves the unfinished objective and rechecks what completed and what still blocks progress. A blocked native goal remains unfinished; these emoji prefix labels do not change the goal's underlying status.
 
 ## Optional testing activity
 
@@ -92,7 +94,7 @@ Install globally with the [skills CLI](https://github.com/vercel-labs/skills), t
 npx skills@latest add ishaqyusuf/thread-status --skill thread-status --global
 ```
 
-The installer supports hosts including Claude Code, Codex, Cursor, and OpenCode. Select your hosts in its prompts; installation does not grant title-editing access. Keep one active version per host if you already have a local copy.
+The installer supports hosts including Claude Code, Codex, Cursor, and OpenCode. Select your hosts in its prompts; installation does not grant prefix-update access. Keep one active version per host if you already have a local copy.
 
 For a cloud orchestrator or another environment, install or upload the `skills/thread-status` folder through that host's supported skill mechanism. A global local installation applies across projects for your selected local agents; it does not install into remote or cloud workspaces.
 
@@ -102,15 +104,15 @@ The skill selects a mode from the capabilities actually available:
 
 | Mode | Available capability | Behavior |
 |---|---|---|
-| Automatic | Reliable current identity, full-title read, and rename operation | Updates the status and optional testing activity at meaningful transitions. |
-| Manual | A documented user rename command and a known full title | Suggests the new title and the manual command. |
-| Status-only | No supported title integration or no reliable title | Shows the current status without claiming a sidebar update. |
+| Automatic | Reliable current identity, full-title read, and a prefix operation or full-title setter | Changes only the status and optional testing emoji prefix, preserving title text exactly. |
+| Manual | A documented user command and a known full title | Suggests the changed emoji prefix with the unchanged title text and the manual command. |
+| Status-only | No supported prefix integration or no safely preserved title text | Shows the current status without claiming a sidebar update. |
 
 | Host | Integration route | Verification |
 |---|---|---|
-| Codex desktop | Exposed chat-read and title-rename tools | Automatic renames exercised. |
-| Claude Code | Runtime integration when available; otherwise its documented `/rename` command for manual use | Documentation-backed; automatic renaming not tested. |
-| OpenCode | Existing authorized session API connection with the current session ID | Documentation-backed; live renaming not tested. |
+| Codex desktop | Exposed chat-read and full-title setter tools, used only for prefix changes | Automatic prefix updates exercised. |
+| Claude Code | Runtime integration when available; otherwise its documented `/rename` command for manual use | Documentation-backed; automatic prefix updates not tested. |
+| OpenCode | Existing authorized session API connection with the current session ID | Documentation-backed; live prefix updates not tested. |
 | Other local or cloud hosts | Existing tools, API, CLI, or an orchestrator adapter implementing the same capabilities | Depends on the supplied integration. |
 
 Read the [host adapters](skills/thread-status/references/host-adapters.md) for the operation mappings and sources. The portable rules do not require a particular model provider.
@@ -151,7 +153,9 @@ For a consistent default, append this portable instruction to your host's effect
 
 Use the thread-status skill when substantive work starts, at status
 changes, and before ending a turn. Read its SKILL.md and follow the
-relevant host adapter. Preserve the title with exactly one status prefix:
+relevant host adapter. Change only the emoji prefix; never rewrite,
+shorten, correct, or generate the title text. Preserve it exactly with
+one status prefix:
 💬 discussion, ⏳ working, ⌛ waiting, ⚠️ needs attention, 🛑 blocked,
 ⏸️ interrupted, 💤 saved for later, ✅ completed.
 While actually testing, add one activity after the status: 🖥️ for general
@@ -167,12 +171,14 @@ Keep ⏳ while useful work remains. Use ⌛ for a process expected to finish,
 ⚠️ when my action is required, and 🛑 for an external blocker with no
 useful work remaining. Use ⏸️ only for a confirmed interruption with
 unfinished work and host support; idle sessions do not prove interruption.
-Preserve unfinished objectives when resuming. Title labels do not change
+Preserve unfinished objectives when resuming. Emoji labels do not change
 native goal status. Do not infer completion from an idle session or the
 end of a turn. Update only the current conversation unless I request
 others. This authorizes title-prefix updates within the host's normal
-permissions. If automatic renaming is unavailable, use manual or
-status-only mode and do not claim the title changed.
+permissions. A full-title setter may only submit the unchanged title
+text with a changed emoji prefix. If safe automatic prefix updates are
+unavailable, use manual or status-only mode and do not claim a sidebar
+update.
 ```
 
 Typical global instruction locations:
@@ -189,14 +195,14 @@ Preserve your other instructions. Start a new conversation or session to verify 
 ## How it behaves
 
 - **Status plus optional activity:** one status emoji, then at most one managed testing emoji. A transition replaces the previous managed prefix.
-- **Preserved titles:** the subject and unrelated emojis remain intact, including manual title edits.
-- **Meaningful updates:** rename when status or testing activity changes, with no repeated write when the title is already correct.
+- **Preserved titles:** the title text stays exactly the same, including wording, punctuation, spacing, and unrelated emojis. The skill preserves the latest manual title edits and never creates a title for an empty one.
+- **Meaningful updates:** change only the managed emoji prefix when status or testing activity changes, with no repeated write when the prefix is already correct.
 - **Scope-aware completion:** a requested plan can be complete when delivered; a requested implementation still needs implementation and verification.
 - **Reopened conversations:** a new task changes a completed chat to ⏳; open-ended discussion changes it to 💬. An acknowledgment alone does not reopen it.
 - **Unfinished work:** interruption and blockage preserve the objective. Resumption checks what actually completed before continuing.
 - **Current chat only:** bulk updates or changes to other chats require an explicit request.
 
-The skill uses the host's existing title capabilities and supports manual/status-only fallback. It contains no background service or polling script. It cannot update a title during a crash or forced interruption; it reconciles the status when work resumes. A missing title integration does not block the main task; the agent reports the status without claiming a rename.
+The skill uses the host's existing title capabilities and supports manual/status-only fallback. It contains no background service or polling script. It cannot update a prefix during a crash or forced interruption; it reconciles the status when work resumes. A missing title integration does not block the main task; the agent reports the status without claiming a sidebar update.
 
 Read the complete behavior in [SKILL.md](skills/thread-status/SKILL.md).
 

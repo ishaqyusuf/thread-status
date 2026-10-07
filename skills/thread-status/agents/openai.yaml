@@ -1,3 +1,3 @@
 interface:
   display_name: "Thread Status"
-  short_description: "Show conversation status and UI or mobile testing"
+  short_description: "Update status emojis while preserving title text"
